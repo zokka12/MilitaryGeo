@@ -1,3 +1,4 @@
+//komentarz do pull request
 import MilitaryOSMLayer from "./MilitaryLayer";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { useEffect } from "react";
