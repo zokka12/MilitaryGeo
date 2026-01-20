@@ -33,34 +33,27 @@ export default function MilitaryOSMLayer() {
         setLoading(true);
         setData(null);
 
-        const query = `
-      [out:json][timeout:60];
-      area["ISO3166-1"="PL"]->.a;
-      (
-        way["military"="${type}"](area.a);
-        relation["military"="${type}"](area.a);
-      );
-      out geom;
-    `;
-
-        const requestUrl =
-            "https://overpass.kumi.systems/api/interpreter?data=" +
-            encodeURIComponent(query);
+        const url = `/data/${type}.json`;
 
         try {
-            const res = await axios.get(requestUrl);
+            const result = await axios.get(url);
+            
+            if (!result.ok) {
+                console.error("Błąd odczytu pliku/Nie znaleziono pliku", url);
+            return;
+            }
 
-            // Debug:
-            // console.log("Overpass response:", res.data);
-
-            const geojson = osmtogeojson(res.data);
+            const geojson = await result.json();
             setData(geojson);
-        } catch (e) {
-            console.error("Błąd Overpass:", e);
-            setData(null);
-        } finally {
+
+        } catch (error) {
+            console.error("Błąd pobierania danych:", error);
+
+        }
+        finally {
             setLoading(false);
         }
+
     };
 
     // ---- Pobieranie danych przy zmianie typu ----
