@@ -24,8 +24,7 @@ export default function App() {
 
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-      {/* <MilitaryOSMLayer /> */}
+      <MilitaryOSMLayer />
     </MapContainer>
   );
 }
- 

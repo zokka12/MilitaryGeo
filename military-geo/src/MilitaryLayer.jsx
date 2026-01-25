@@ -1,4 +1,5 @@
 // ---- IMPORTY ----
+import "./MilitaryLayer.css"
 import { useEffect, useState, useRef } from "react";
 import { GeoJSON, useMap } from "react-leaflet";
 import axios from "axios";
@@ -8,6 +9,7 @@ import osmtogeojson from "osmtogeojson";
 const MILITARY_TYPES = [
     "barracks",
     "naval_base",
+    "all"
     // TODO: Dodaj więcej typów:
     // "airfield", "training_area", "range", "office", "danger_area", "shelter", "bunker"
 ];
@@ -16,6 +18,7 @@ const MILITARY_TYPES = [
 const MILITARY_LABELS = {
     barracks: "Koszary",
     naval_base: "Baza morska",
+    all: "Wszystkie obiekty wojskowe",
     // TODO: Dodaj tłumaczenia dla nowych typów
 };
 
@@ -25,6 +28,12 @@ export default function MilitaryOSMLayer() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const [layerStyle, setLayerStyle] = useState({
+        color: "#ff0000",
+        weight: 6,
+        fillOpacity: 0.45
+    });
+
     const layerRef = useRef(null);
     const map = useMap();
 
@@ -33,27 +42,41 @@ export default function MilitaryOSMLayer() {
         setLoading(true);
         setData(null);
 
-        const url = `/data/${type}.json`;
+        // ---- KROK 3: Rozdzielenie logiki ----
+        if (type === "all") {
+            // Logika dla "Pokaż wszystkie" - pobieranie z serwera Overpass
+            const typesFilter = ["barracks", "naval_base"].join('|');
+            const query = `[out:json][timeout:60];area["ISO3166-1"="PL"]->.a;(way["military"~"${typesFilter}"](area.a);relation["military"~"${typesFilter}"](area.a););out geom;`;
+            const overpassUrl = "https://overpass.kumi.systems/api/interpreter?data=" + encodeURIComponent(query);
 
-        try {
-            const result = await axios.get(url);
-            
-            if (!result.ok) {
-                console.error("Błąd odczytu pliku/Nie znaleziono pliku", url);
-            return;
+            try {
+                const res = await axios.get(overpassUrl);
+                const geojson = osmtogeojson(res.data);
+                setData(geojson);
+            } catch (e) {
+                console.error("Błąd pobierania wszystkich warstw:", e);
+            } finally {
+                setLoading(false);
             }
+            return; // Kończymy funkcję tutaj, żeby nie szukała pliku all.json
+        }
 
+        // ---- TWOJA PIERWOTNA LOGIKA (bez zmian) ----
+        const url = `/data/${type}.json`;
+        try {
+            console.log("step 1");
+            const result = await fetch(url);
+            if (!result.ok) {
+                console.error("Błąd odczytu pliku", url);
+                return;
+            }
             const geojson = await result.json();
             setData(geojson);
-
         } catch (error) {
             console.error("Błąd pobierania danych:", error);
-
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
-
     };
 
     // ---- Pobieranie danych przy zmianie typu ----
@@ -140,19 +163,61 @@ export default function MilitaryOSMLayer() {
             {/* ---- WARSTWA GEOJSON ---- */}
             {data && (
                 <GeoJSON
-                    key={militaryType}
+                    key={`${militaryType}-${JSON.stringify(layerStyle)}`} // Klucz wymusza odświeżenie przy zmianie stylu
                     data={data}
                     ref={layerRef}
                     style={() => ({
-                        color: "#ff0000",
-                        weight: 6,
+                        color: layerStyle.color,
+                        weight: layerStyle.weight,
                         opacity: 1,
-                        fillColor: "#ff0000",
-                        fillOpacity: 0.45,
+                        fillColor: layerStyle.color,
+                        fillOpacity: layerStyle.fillOpacity,
                     })}
                 />
             )}
+            {/* ---- ZADANIE 1: LEGENDA (Lewy dolny róg) ---- */}
+            {data && (
+                <div className="legend-container">
+                    <div><strong>Typ:</strong> {MILITARY_LABELS[militaryType]}</div>
+                    <div><strong>Liczba obiektów:</strong> {data.features.length}</div>
+                </div>
+            )}
+
+
+            {/* ZADANIE 1: LEGENDA (Lewy dolny róg) */}
+            {data && (
+                <div className="legend-container">
+                    <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Legenda</div>
+                    <div><strong>Typ:</strong> {MILITARY_LABELS[militaryType]}</div>
+                    <div><strong>Obiekty:</strong> {data.features.length}</div>
+                </div>
+            )}
+
+            {/* ZADANIE 2: STYLE (Prawy dolny róg) */}
+            <div className="style-container">
+                <div style={{ fontWeight: "bold", marginBottom: "8px" }}>Styl warstwy</div>
+
+                <label>Kolor: </label>
+                <input
+                    type="color"
+                    value={layerStyle.color}
+                    onChange={(e) => setLayerStyle({ ...layerStyle, color: e.target.value })}
+                /><br />
+
+                <label>Grubość: {layerStyle.weight}</label><br />
+                <input
+                    type="range" min="1" max="15"
+                    value={layerStyle.weight}
+                    onChange={(e) => setLayerStyle({ ...layerStyle, weight: parseInt(e.target.value) })}
+                /><br />
+
+                <label>Przezroczystość: {layerStyle.fillOpacity}</label><br />
+                <input
+                    type="range" min="0" max="1" step="0.1"
+                    value={layerStyle.fillOpacity}
+                    onChange={(e) => setLayerStyle({ ...layerStyle, fillOpacity: parseFloat(e.target.value) })}
+                />
+            </div>
         </>
     );
 }
- 
