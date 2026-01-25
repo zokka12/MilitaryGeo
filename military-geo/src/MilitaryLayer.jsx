@@ -9,17 +9,28 @@ import osmtogeojson from "osmtogeojson";
 const MILITARY_TYPES = [
     "barracks",
     "naval_base",
-    "all"
-    // TODO: Dodaj więcej typów:
-    // "airfield", "training_area", "range", "office", "danger_area", "shelter", "bunker"
+    "airfield",      // Lotniska wojskowe
+    "training_area",  // Obszary szkoleniowe
+    "range",         // Poligony
+    "office",        // Biura/Administracja wojskowa
+    "danger_area",   // Obszary niebezpieczne
+    "shelter",       // Schrony
+    "bunker",        // Bunkry
+    "all"            // Opcja pokazująca wszystko
 ];
 
 // ---- ETYKIETY ----
 const MILITARY_LABELS = {
     barracks: "Koszary",
     naval_base: "Baza morska",
-    all: "Wszystkie obiekty wojskowe",
-    // TODO: Dodaj tłumaczenia dla nowych typów
+    airfield: "Lotnisko wojskowe",
+    training_area: "Obszar szkoleniowy",
+    range: "Poligon",
+    office: "Administracja wojskowa",
+    danger_area: "Strefa niebezpieczna",
+    shelter: "Schron",
+    bunker: "Bunkier",
+    all: "Wszystkie obiekty wojskowe"
 };
 
 // ---- KOMPONENT ----
@@ -44,9 +55,17 @@ export default function MilitaryOSMLayer() {
 
         // ---- KROK 3: Rozdzielenie logiki ----
         if (type === "all") {
-            // Logika dla "Pokaż wszystkie" - pobieranie z serwera Overpass
-            const typesFilter = ["barracks", "naval_base"].join('|');
-            const query = `[out:json][timeout:60];area["ISO3166-1"="PL"]->.a;(way["military"~"${typesFilter}"](area.a);relation["military"~"${typesFilter}"](area.a););out geom;`;
+            // Pobieramy tylko te typy, które faktycznie zdefiniowaliśmy
+            const typesFilter = MILITARY_TYPES.filter(t => t !== 'all').join('|');
+
+            // Optymalizacja: dodajemy (node, way, relation) w jednej grupie
+            const query = `[out:json][timeout:30];
+        area["ISO3166-1"="PL"]->.a;
+        (
+          nwr["military"~"^(${typesFilter})$"](area.a);
+        );
+        out geom;`;
+
             const overpassUrl = "https://overpass.kumi.systems/api/interpreter?data=" + encodeURIComponent(query);
 
             try {
