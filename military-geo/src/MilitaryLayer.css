@@ -1,0 +1,51 @@
+/* Wspólne style dla paneli w rogach */
+/* MilitaryLayer.css */
+
+.button-panel {
+    position: absolute;
+    top: 20px;               /* Odstęp od góry */
+    
+    /* Trik na idealne wyśrodkowanie: */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    z-index: 1000;           /* Panel musi być NAD mapą */
+    
+    background: rgba(255, 255, 255, 0.95); /* Tło */
+    padding: 15px;
+    border-radius: 12px;     /* Ładnie zaokrąglone rogi */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Wyraźniejszy cień */
+    
+    display: flex;
+    flex-direction: column;  /* Układamy elementy pionowo */
+    align-items: center;     /* Środkujemy zawartość wewnątrz panelu */
+    
+    max-width: 90vw;         /* Żeby nie wyszedł poza ekran na telefonie */
+    width: auto;             /* Szerokość dopasowana do przycisków */
+}
+
+.legend-container, .style-container {
+    position: fixed;
+    z-index: 1000;
+    background: rgba(182, 215, 245, 0.95); /* Prawie białe, lekko przezroczyste tło */
+    padding: 15px;
+    border-radius: 12px; /* Zaokrąglone rogi jak na Twoich screenach */
+    box-shadow: 0 4px 15px rgba(126, 80, 80, 0.2); /* Delikatny cień */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    border: 1px solid #4d62a8;
+}
+
+/* Pozycjonowanie zadane w instrukcji */
+.legend-container {
+    bottom: 30px;
+    left: 20px;
+    min-width: 180px;
+}
+
+.style-container {
+    bottom: 30px;
+    right: 20px;
+    width: 220px;
+}
+
